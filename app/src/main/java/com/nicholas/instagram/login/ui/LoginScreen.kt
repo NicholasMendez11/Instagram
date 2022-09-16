@@ -1,7 +1,4 @@
-package com.nicholas.instagram.ui.screens
-
-
-import android.util.Patterns
+package com.nicholas.instagram.login.ui
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -14,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,25 +27,26 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nicholas.instagram.R
-
+//Eso es el View. O la vista, la Interfaz pues. Se supone que no debemo tener logica aqui.
+//Nos suscribimos al view model (que va en esta mismo directorio) y desde ahi se ejecuta la logica  que se necesite aqui.
+// (manejo de estados, funciones, etc.) Aqui podemos crear variables suscritas al view model, que recojan esos datos.
 @Composable
-fun Login() {
-    var logoName by rememberSaveable {
-        mutableStateOf("Instagram")
-    }
+fun Login(loginViewModel: LoginViewModel) {
+
     Box(modifier = Modifier.fillMaxSize()) {
 
-        Body(Modifier.align(Alignment.Center), logoName)
-        Footer(Modifier.align(Alignment.BottomCenter), logoName) { logoName = it }
+        Body(Modifier.align(Alignment.Center), loginViewModel)
+        Footer(Modifier.align(Alignment.BottomCenter))
 
     }
 }
 
 @Composable
-fun Body(modifier: Modifier, logoName: String) {
-    var emailvalue by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
-    var isLogin by rememberSaveable { mutableStateOf(false) }
+fun Body(modifier: Modifier, loginViewModel: LoginViewModel) {
+
+    val email: String by loginViewModel.email.observeAsState(initial = "") //Suscrito al live data
+    val password: String by loginViewModel.password.observeAsState(initial = "")//Suscrito al live data del view model.
+    val isLogin: Boolean by loginViewModel.isLogin.observeAsState(initial = false)
 
     Column(
         modifier
@@ -55,17 +54,16 @@ fun Body(modifier: Modifier, logoName: String) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        HeadLogo(logoName)
-        EntryUser(emailvalue) {
-            emailvalue = it
-            isLogin = enableLogin(emailvalue, password)
+        HeadLogo()
+        EntryUser(email) {
+            loginViewModel.onLoginChanged(it, password)
+
         }
         EntryPassword(password) {
-            password = it
-            isLogin = enableLogin(emailvalue, password)
+            loginViewModel.onLoginChanged(email, it)
         }
         PasswordReset()
-        logInButton(isLogin)
+        LogInButton(isLogin)
         DividerSection()
         FacebookConnect()
 
@@ -74,7 +72,7 @@ fun Body(modifier: Modifier, logoName: String) {
 }
 
 @Composable
-fun Footer(modifier: Modifier, logoName: String, changeName: (String) -> Unit) {
+fun Footer(modifier: Modifier) {
     Column(modifier.padding(0.dp)) {
         Divider()
         Row(
@@ -97,7 +95,7 @@ fun Footer(modifier: Modifier, logoName: String, changeName: (String) -> Unit) {
                             stiffness = Spring.StiffnessLow
                         )
                     )
-                    .clickable { changeName("Nicholas Mendez") },
+                    .clickable { },
                 text = "Sign Up",
                 style = MaterialTheme.typography.body1,
                 color = MaterialTheme.colors.primary
@@ -109,9 +107,7 @@ fun Footer(modifier: Modifier, logoName: String, changeName: (String) -> Unit) {
 
 @Composable
 fun FacebookConnect() {
-    var showAlert by remember { mutableStateOf(false) }
 
-    MySimpleCustomDialog(showAlert) { showAlert = false }
 
     Row(
         modifier = Modifier
@@ -127,7 +123,7 @@ fun FacebookConnect() {
         Text(
             modifier = Modifier
                 .padding(16.dp)
-                .clickable { showAlert = true },
+                .clickable {},
             text = "Continue as Nicholas Mendez",
             style = MaterialTheme.typography.body1,
             color = MaterialTheme.colors.primary
@@ -136,7 +132,7 @@ fun FacebookConnect() {
 }
 
 @Composable
-fun logInButton(isLogin: Boolean) {
+fun LogInButton(isLogin: Boolean) {
     Button(
         onClick = { /*TODO*/ }, modifier = Modifier
             .fillMaxWidth()
@@ -236,9 +232,9 @@ fun EntryUser(emailvalue: String, onTextChange: (String) -> Unit) {
 }
 
 @Composable
-fun HeadLogo(logoName: String) {
+fun HeadLogo() {
     Text(
-        text = logoName,
+        text = "Instagram",
         fontFamily = FontFamily(Font(R.font.beutiful)),
         textAlign = TextAlign.Center,
         fontSize = 40.sp,
@@ -247,5 +243,4 @@ fun HeadLogo(logoName: String) {
     )
 }
 
-fun enableLogin(email: String, password: String) =
-    Patterns.EMAIL_ADDRESS.matcher(email).matches() && password.length > 6
+
